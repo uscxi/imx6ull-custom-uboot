@@ -1,0 +1,84 @@
+# SPDX-License-Identifier: GPL-2.0
+# ==========================================================================
+# Building binaries on the host system
+# Binaries are used during the compilation of the kernel, for example
+# to preprocess a data file.
+#
+# Both C and C++ are supported, but preferred language is C for such utilities.
+#
+# Sample syntax (see Documentation/kbuild/makefiles.txt for reference)
+# hostprogs-y := bin2hex
+# Will compile bin2hex.c and create an executable named bin2hex
+#
+# hostprogs-y    := lxdialog
+# lxdialog-objs := checklist.o lxdialog.o
+# Will compile lxdialog.c and checklist.c, and then link the executable
+# lxdialog, based on checklist.o and lxdialog.o
+#
+# hostprogs-y      := qconf
+# qconf-cxxobjs   := qconf.o
+# qconf-objs      := menu.o
+# Will compile qconf as a C++ program, and menu as a C program.
+# They are linked as C++ code to the executable qconf
+
+__hostprogs := $(sort $(hostprogs-y))
+
+# C code
+# Executables compiled from a single .c file
+host-csingle	:= $(foreach m,$(__hostprogs), \
+			$(if $($(m)-objs)$($(m)-cxxobjs)$($(m)-sharedobjs),,$(m)))
+
+# C executables linked based on several .o files
+host-cmulti	:= $(foreach m,$(__hostprogs),\
+		   $(if $($(m)-cxxobjs),,$(if $($(m)-objs),$(m))))
+
+# Object (.o) files compiled from .c files
+host-cobjs	:= $(sort $(foreach m,$(__hostprogs),$($(m)-objs)))
+
+host-csingle	:= $(addprefix $(obj)/,$(host-csingle))
+host-cmulti	:= $(addprefix $(obj)/,$(host-cmulti))
+host-cobjs	:= $(addprefix $(obj)/,$(host-cobjs))
+
+#####
+# Handle options to gcc. Support building with separate output directory
+
+_hostc_flags   = $(KBUILD_HOSTCFLAGS)   $(HOST_EXTRACFLAGS)   \
+                 $(HOSTCFLAGS_$(basetarget).o)
+
+ifeq ($(KBUILD_SRC),)
+__hostc_flags	= $(_hostc_flags)
+else
+__hostc_flags	= -I$(obj) $(call flags,_hostc_flags)
+endif
+
+hostc_flags    = -Wp,-MD,$(depfile) $(__hostc_flags)
+
+#####
+# Compile programs on the host
+
+# Create executable from a single .c file
+# host-csingle -> Executable
+quiet_cmd_host-csingle 	= HOSTCC  $@
+      cmd_host-csingle	= $(HOSTCC) $(hostc_flags) $(KBUILD_HOSTLDFLAGS) -o $@ $< \
+	  	$(KBUILD_HOSTLDLIBS) $(HOSTLDLIBS_$(@F))
+$(host-csingle): $(obj)/%: $(src)/%.c FORCE
+	$(call if_changed_dep,host-csingle)
+
+# Link an executable based on list of .o files, all plain c
+# host-cmulti -> executable
+quiet_cmd_host-cmulti	= HOSTLD  $@
+      cmd_host-cmulti	= $(HOSTCC) $(KBUILD_HOSTLDFLAGS) -o $@ \
+			  $(addprefix $(obj)/,$($(@F)-objs)) \
+			  $(KBUILD_HOSTLDLIBS) $(HOSTLDLIBS_$(@F))
+$(host-cmulti): FORCE
+	$(call if_changed,host-cmulti)
+$(call multi_depend, $(host-cmulti), , -objs)
+
+# Create .o file from a single .c file
+# host-cobjs -> .o
+quiet_cmd_host-cobjs	= HOSTCC  $@
+      cmd_host-cobjs	= $(HOSTCC) $(hostc_flags) -c -o $@ $<
+$(host-cobjs): $(obj)/%.o: $(src)/%.c FORCE
+	$(call if_changed_dep,host-cobjs)
+
+targets += $(host-csingle) $(host-cmulti) $(host-cobjs)

@@ -1,0 +1,51 @@
+#
+# NOTE! Don't add files that are generated in specific
+# subdirectories here. Add them in the ".gitignore" file
+# in that subdirectory instead.
+#
+# Normal rules (sorted alphabetically)
+#
+.*
+*.a
+*.asn1.[ch]
+*.bin
+*.bin[_.]*
+*.i
+*.lex.c
+*.lst
+*.map
+*.o
+*.o.*
+*.patch
+*.s
+*.tab.[ch]
+# Build tree
+/build*
+/out*
+
+#
+# Top-level generic files
+#
+/System.map
+/u-boot*
+/*.log
+
+#
+# git files that we don't want to ignore even it they are dot-files
+#
+!.gitignore
+
+#
+# Generated files
+#
+/defconfig
+/generated_defconfig
+/keep-syms-lto.*
+
+#
+# Generated include files
+#
+/include/autoconf.mk*
+/include/config.h
+/include/config/
+/include/generated/

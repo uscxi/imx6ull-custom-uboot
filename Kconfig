@@ -1,0 +1,24 @@
+mainmenu "U-Boot $(UBOOTVERSION) Configuration"
+
+comment "Compiler: $(CC_VERSION_TEXT)"
+
+source "scripts/Kconfig.include"
+
+# Allow defaults in arch-specific code to override any given here
+source "arch/Kconfig"
+
+menu "General setup"
+
+config HAVE_TEXT_BASE
+	bool
+	default y
+
+config TEXT_BASE
+	depends on HAVE_TEXT_BASE
+    default 0x87800000 if ARCH_MX6
+    hex "Text Base"
+	help
+	  The address in memory that U-Boot will be copied and executed from
+	  initially.
+
+endmenu # General setup

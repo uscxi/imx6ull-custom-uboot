@@ -1,0 +1,213 @@
+# 检查是否有 vpl/ 前缀
+# patsubst 尝试从 obj 中去掉 vpl/ 前缀
+# 如果 obj=vpl/lib，则 src=lib（后续条件不相等，则有vpl前缀）
+# 如果 obj=lib，则 src=lib（无变化，说明没有 vpl/ 前缀）
+prefix := vpl
+src := $(patsubst $(prefix)/%,%,$(obj))
+
+ifeq ($(obj),$(src))
+# obj 与 src 相同，说明没有 vpl/ 前缀，继续尝试 tpl/
+prefix := tpl
+src := $(patsubst $(prefix)/%,%,$(obj))
+
+ifeq ($(obj),$(src))
+# 也没有 tpl/ 前缀，继续尝试 spl/
+prefix := spl
+src := $(patsubst $(prefix)/%,%,$(obj))
+
+ifeq ($(obj),$(src))
+# 三个前缀都不匹配，这是主 U-Boot 构建
+# prefix 设为 "."，表示当前目录（无前缀）
+prefix := .
+endif
+endif
+endif
+
+PHONY := __build
+__build:
+
+# 初始化kbuild文件中使用的所有相关变量，以确保：
+# 1) 它们具有正确的类型
+# 2) 它们不会从环境中继承任何值
+obj-y :=
+lib-y :=
+always :=
+targets :=
+subdir-y :=
+asflags-y  :=
+ccflags-y  :=
+ldflags-y  :=
+
+subdir-asflags-y :=
+subdir-ccflags-y :=
+
+# Read auto.conf if it exists, otherwise ignore
+# Modified for U-Boot
+-include include/config/auto.conf
+-include $(prefix)/include/autoconf.mk
+
+include scripts/Kbuild.include
+
+# 文件名 Kbuild 的优先级高于 Makefile
+kbuild-dir := $(if $(filter /%,$(src)),$(src),$(srctree)/$(src))
+kbuild-file := $(if $(wildcard $(kbuild-dir)/Kbuild),$(kbuild-dir)/Kbuild,$(kbuild-dir)/Makefile)
+include $(kbuild-file)
+
+# Added for U-Boot
+asflags-y  += $(PLATFORM_CPPFLAGS)
+ccflags-y  += $(PLATFORM_CPPFLAGS)
+cppflags-y += $(PLATFORM_CPPFLAGS)
+
+include scripts/Makefile.lib
+
+# Do not include host rules unless needed
+ifneq ($(hostprogs-y),)
+include scripts/Makefile.host
+endif
+
+# Uncommented for U-Boot
+#  We need to create output dicrectory for SPL and TPL even for in-tree build
+#ifneq ($(KBUILD_SRC),)
+# Create output directory if not already present
+_dummy := $(shell [ -d $(obj) ] || mkdir -p $(obj))
+
+# Create directories for object files if directory does not exist
+# Needed when obj-y := dir/file.o syntax is used
+_dummy := $(foreach d,$(obj-dirs), $(shell [ -d $(d) ] || mkdir -p $(d)))
+#endif
+
+ifndef obj
+$(warning kbuild: Makefile.build is included improperly)
+endif
+
+ifneq ($(strip $(obj-y) $(obj-)),)
+builtin-target := $(obj)/built-in.o
+endif
+
+__build: $(builtin-target) $(extra-y) $(subdir-ym) $(always)
+	@:
+
+# Compile C sources (.c)
+# ---------------------------------------------------------------------------
+# Default is built-in, unless we know otherwise
+quiet_modtag := $(empty)   $(empty)
+
+quiet_cmd_cc_s_c = CC $(quiet_modtag)  $@
+cmd_cc_s_c       = $(CC) $(c_flags) $(DISABLE_LTO) -fverbose-asm -S -o $@ $<
+
+$(obj)/%.s: $(src)/%.c FORCE
+	$(call if_changed_dep,cc_s_c)
+
+quiet_cmd_cc_i_c = CPP $(quiet_modtag) $@
+cmd_cc_i_c       = $(CPP) $(c_flags)   -o $@ $<
+
+$(obj)/%.i: $(src)/%.c FORCE
+	$(call if_changed_dep,cc_i_c)
+
+# C (.c) files
+# The C file is compiled and updated dependency information is generated.
+# (See cmd_cc_o_c + relevant part of rule_cc_o_c)
+
+quiet_cmd_cc_o_c = CC $(quiet_modtag)  $@
+cmd_cc_o_c = $(CC) $(c_flags) -c -o $@ $<
+
+define rule_cc_o_c
+	$(call echo-cmd,cc_o_c) $(cmd_cc_o_c);				  \
+	scripts/basic/fixdep $(depfile) $@ '$(call make-cmd,cc_o_c)' >    \
+	                                              $(dot-target).tmp;  \
+	rm -f $(depfile);						  \
+	mv -f $(dot-target).tmp $(dot-target).cmd
+endef
+
+# Built-in and composite module parts
+$(obj)/%.o: $(src)/%.c FORCE
+	$(call if_changed_rule,cc_o_c)
+
+# Compile assembler sources (.S)
+# ---------------------------------------------------------------------------
+
+quiet_cmd_as_s_S = CPP $(quiet_modtag) $@
+cmd_as_s_S       = $(CPP) $(a_flags)   -o $@ $<
+
+$(obj)/%.s: $(src)/%.S FORCE
+	$(call if_changed_dep,as_s_S)
+
+quiet_cmd_as_o_S = AS $(quiet_modtag)  $@
+cmd_as_o_S       = $(CC) $(a_flags) -c -o $@ $<
+
+$(obj)/%.o: $(src)/%.S FORCE
+	$(call if_changed_dep,as_o_S)
+
+targets += $(real-objs-y) $(lib-y)
+targets += $(extra-y) $(MAKECMDGOALS) $(always)
+targets += $(lib-y) $(always-y)
+
+# Linker scripts preprocessor (.lds.S -> .lds)
+# ---------------------------------------------------------------------------
+quiet_cmd_cpp_lds_S = LDS     $@
+      cmd_cpp_lds_S = $(CPP) $(cpp_flags) -P -C -U$(ARCH) \
+	                     -D__ASSEMBLY__ -DLINKER_SCRIPT -o $@ $<
+
+$(obj)/%.lds: $(src)/%.lds.S FORCE
+	$(call if_changed_dep,cpp_lds_S)
+
+# To build objects in subdirs, we need to descend into the directories
+$(sort $(subdir-obj-y)): $(subdir-ym) ;
+
+#
+# Rule to compile a set of .o files into one .o file
+#
+ifdef builtin-target
+quiet_cmd_link_o_target = AR      $@
+# If the list of objects to link is empty, just create an empty built-in.o
+cmd_link_o_target = $(if $(strip $(obj-y)),\
+		      rm -f $@; $(AR) cDPrsT $@ $(filter $(obj-y), $^), \
+		      rm -f $@; $(AR) cDPrsT$(KBUILD_ARFLAGS) $@)
+
+$(builtin-target): $(obj-y) FORCE
+	$(call if_changed,link_o_target)
+
+targets += $(builtin-target)
+endif # builtin-target
+
+# Add intermediate targets:
+# When building objects with specific suffix patterns, add intermediate
+# targets that the final targets are derived from.
+intermediate_targets = $(foreach sfx, $(2), \
+				$(patsubst %$(strip $(1)),%$(sfx), \
+					$(filter %$(strip $(1)), $(targets))))
+# %.lex.o <- %.lex.c <- %.l
+# %.tab.o <- %.tab.[ch] <- %.y
+targets += $(call intermediate_targets, .lex.o, .lex.c) \
+	   $(call intermediate_targets, .tab.o, .tab.c .tab.h)
+
+# Descending
+# ---------------------------------------------------------------------------
+
+PHONY += $(subdir-ym)
+$(subdir-ym):
+	$(Q)$(MAKE) $(build)=$@
+
+# Add FORCE to the prequisites of a target to force it to be always rebuilt.
+# ---------------------------------------------------------------------------
+
+PHONY += FORCE
+
+FORCE:
+
+# Read all saved command lines and dependencies for the $(targets) we
+# may be building above, using $(if_changed{,_dep}). As an
+# optimization, we don't need to read them if the target does not
+# exist, we will rebuild anyway in that case.
+
+cmd_files := $(wildcard $(foreach f,$(sort $(targets)),$(dir $(f)).$(notdir $(f)).cmd))
+
+ifneq ($(cmd_files),)
+  include $(cmd_files)
+endif
+
+# Create directories for object files if they do not exist
+obj-dirs := $(sort $(obj) $(patsubst %/,%, $(dir $(targets))))
+$(shell mkdir -p $(obj-dirs))
+
+.PHONY: $(PHONY)
