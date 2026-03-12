@@ -553,7 +553,7 @@ cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(UBOOTINCLUDE) \
 							$(NOSTDINC_FLAGS)
 c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
 
-# libs-y += common/
+libs-y += common/
 
 # sort 去重并按字母排序
 # 排序虽然改变了链接顺序，但 U-Boot 的启动入口由链接脚本的 ENTRY() 指令决定，而非链接顺序

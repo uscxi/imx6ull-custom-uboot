@@ -7,5 +7,13 @@
 #ifndef __MX6ULLEVK_CONFIG_H
 #define __MX6ULLEVK_CONFIG_H
 
+#include <asm/arch/imx-regs.h>
+
+/* Physical Memory Map */
+#define PHYS_SDRAM			MMDC0_ARB_BASE_ADDR
+
+#define CFG_SYS_SDRAM_BASE		PHYS_SDRAM
+#define CFG_SYS_INIT_RAM_ADDR	IRAM_BASE_ADDR
+#define CFG_SYS_INIT_RAM_SIZE	IRAM_SIZE
 
 #endif /* __MX6ULLEVK_CONFIG_H */

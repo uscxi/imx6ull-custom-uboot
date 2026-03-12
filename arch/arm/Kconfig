@@ -1,0 +1,40 @@
+menu "ARM architecture"
+	depends on ARM
+
+config SYS_ARCH
+	default "arm"
+
+config CPU_V7A
+	bool
+
+config SYS_CPU
+	default "armv7" if CPU_V7A
+
+config SYS_ARM_ARCH
+	int
+	default 7 if CPU_V7A
+	default 7 if CPU_V7M
+	default 7 if CPU_V7R
+	default 8 if ARM64
+
+choice
+    prompt "Target select"
+    default ARCH_MX6
+
+config ARCH_MX6
+	bool "Freescale MX6"
+	select CPU_V7A
+	select MACH_IMX
+
+config ARCH_QEMU
+	bool "QEMU Virtual Platform"
+
+config ARCH_TEGRA
+	bool "NVIDIA Tegra"
+
+endchoice
+
+config MACH_IMX
+	bool
+
+endmenu

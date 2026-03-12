@@ -65,3 +65,5 @@ config SYS_CONFIG_NAME
 	  This option should contain the base name of board header file.
 	  The header file include/configs/<CONFIG_SYS_CONFIG_NAME>.h
 	  should be included from include/config.h.
+
+source "arch/arm/Kconfig"
