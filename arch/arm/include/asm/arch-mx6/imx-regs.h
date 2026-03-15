@@ -3,8 +3,20 @@
 
 #define IRAM_BASE_ADDR			0x00900000 // OCRAM基地址
 #define MMDC0_ARB_BASE_ADDR     0x80000000 // MMDC—x16 DDR Controller.
+#define MMDC0_ARB_END_ADDR              0xFFFFFFFF
+
+#define AIPS1_ARB_BASE_ADDR             0x02000000
+#define AIPS1_ARB_END_ADDR              0x020FFFFF
+
+/* Defines for Blocks connected via AIPS (SkyBlue) */
+#define ATZ1_BASE_ADDR              AIPS1_ARB_BASE_ADDR
 
 #define IRAM_SIZE               0x00020000 // 对应手册上的OCRAM 128 KB
+
+#define AIPS1_OFF_BASE_ADDR         (ATZ1_BASE_ADDR + 0x80000)
+#define CCM_BASE_ADDR               (AIPS1_OFF_BASE_ADDR + 0x44000)
+
+#define UART1_BASE                  (ATZ1_BASE_ADDR + 0x20000)
 
 /* 
  * CCM相关寄存器地址 

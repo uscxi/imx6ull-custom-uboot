@@ -236,6 +236,8 @@ OBJDUMP		= $(CROSS_COMPILE)objdump
 LEX		= flex
 YACC		= bison
 
+KBUILD_CPPFLAGS := -D__KERNEL__ -D__UBOOT__
+
 # C 编译器标志
 # -Wall:              开启大部分编译警告
 # -Wstrict-prototypes: 要求严格的函数原型声明
@@ -270,6 +272,14 @@ KBUILD_LDFLAGS  :=
 #   如果编译器支持 -fno-PIE 则使用之，否则忽略
 KBUILD_CFLAGS	+= $(call cc-option,-fno-PIE)
 KBUILD_AFLAGS	+= $(call cc-option,-fno-PIE)
+
+# 调试信息
+DEBUG ?= 0
+
+ifeq ($(DEBUG), 1)
+KBUILD_CFLAGS += -g
+KBUILD_AFLAGS += -g
+endif
 
 # 版本字符串生成
 # UBOOTRELEASE: 完整版本字符串，从 include/config/uboot.release 读取
@@ -554,6 +564,7 @@ cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(UBOOTINCLUDE) \
 c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
 
 libs-y += common/
+libs-y += drivers/
 
 # sort 去重并按字母排序
 # 排序虽然改变了链接顺序，但 U-Boot 的启动入口由链接脚本的 ENTRY() 指令决定，而非链接顺序

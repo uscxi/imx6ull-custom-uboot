@@ -1,0 +1,32 @@
+if ARCH_MX6
+
+config MX6
+	bool
+	default y
+
+choice
+	prompt "i.MX6 SoC select"
+
+config MX6UL
+	bool "i.MX 6UltraLite SoC support"
+
+config MX6ULL
+	bool "i.MX 6ULL SoC support"
+
+endchoice
+
+choice
+	prompt "MX6 board select"
+	optional
+
+config TARGET_MX6ULL_14X14_EVK
+	bool "Support mx6ull_14x14_evk"
+	depends on MX6ULL
+    select DM
+
+endchoice
+
+config SYS_SOC
+	default "mx6"
+
+endif

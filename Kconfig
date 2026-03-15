@@ -9,6 +9,40 @@ source "arch/Kconfig"
 
 menu "General setup"
 
+config CC_IS_GCC
+	def_bool $(success,$(CC) --version | head -n 1 | grep -q gcc)
+
+config GCC_VERSION
+	int
+	default $(shell,$(srctree)/scripts/gcc-version.sh -p $(CC) | sed 's/^0*//') if CC_IS_GCC
+	default 0
+
+choice
+	prompt "Optimization level"
+	default CC_OPTIMIZE_FOR_SIZE
+
+config CC_OPTIMIZE_FOR_SIZE
+	bool "Optimize for size"
+	help
+	  Enabling this option will pass "-Os" to gcc, resulting in a smaller
+	  U-Boot image.
+
+	  This option is enabled by default for U-Boot.
+
+config CC_OPTIMIZE_FOR_SPEED
+	bool "Optimize for speed"
+	help
+	  Enabling this option will pass "-O2" to gcc, resulting in a faster
+	  U-Boot image.
+
+config CC_OPTIMIZE_FOR_DEBUG
+	bool "Optimize for debugging"
+	help
+	  Enabling this option will pass "-Og" to gcc, enabling optimizations
+	  which don't interfere with debugging.
+
+endchoice
+
 config HAVE_TEXT_BASE
 	bool
 	default y
@@ -21,4 +55,41 @@ config TEXT_BASE
 	  The address in memory that U-Boot will be copied and executed from
 	  initially.
 
+config SYS_MALLOC_F
+	bool "Enable malloc() pool before relocation"
+	default y if DM
+
+	help
+	  Before relocation, memory is very limited on many platforms. Still,
+	  we can provide a small malloc() pool if needed. Driver model in
+	  particular needs this to operate, so that it can allocate the
+	  initial serial device and any others that are needed.
+
+config SYS_MALLOC_F_LEN
+	hex "Size of malloc() pool before relocation"
+	depends on SYS_MALLOC_F
+    default 0x2000
+	help
+		Size of the malloc() pool for use before relocation. If
+		this is defined, then a very simple malloc() implementation
+		will become available before relocation. The address is just
+		below the global data, and the stack is moved down to make
+		space.
+
+		This feature allocates regions with increasing addresses
+		within the region. calloc() is supported, but realloc()
+		is not available. free() is supported but does nothing.
+		The memory will be freed (or in fact just forgotten) when
+		U-Boot relocates itself.
+
+config DM
+	bool "Enable Driver Model"
+	help
+	  This config option enables Driver Model. This brings in the core
+	  support, including scanning of platform data on start-up. If
+	  CONFIG_OF_CONTROL is enabled, the device tree will be scanned also
+	  when available.
+
 endmenu # General setup
+
+source "drivers/Kconfig"

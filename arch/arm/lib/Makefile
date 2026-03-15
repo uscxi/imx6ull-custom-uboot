@@ -1,1 +1,1 @@
-obj-y	+= vectors.o
+obj-y	+= vectors.o crt0.o

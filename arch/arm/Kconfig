@@ -34,7 +34,8 @@ config ARCH_TEGRA
 
 endchoice
 
-config MACH_IMX
-	bool
+source "arch/arm/mach-imx/mx6/Kconfig"
+
+source "arch/arm/mach-imx/Kconfig"
 
 endmenu

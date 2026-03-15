@@ -1,4 +1,5 @@
 #include <config.h>
+#include <init.h>
 
 /*
  * LED init
@@ -47,9 +48,11 @@ void delay(volatile unsigned int n)
 	}
 }
 
-int _main(void)
+void main_loop(void)
 {
     led_init();			/* 初始化led */
+
+    printascii("Early Debug UART for IMX6ULL\n");
 
 	while(1)			/* 死循环 */
 	{	
@@ -59,6 +62,4 @@ int _main(void)
 		led_on();		/* 打开LED		 	*/
 		delay(1000);		/* 延时大约1s */
 	}
-
-	return 0;
 }
