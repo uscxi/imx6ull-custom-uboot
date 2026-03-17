@@ -596,7 +596,6 @@ u-boot-main := $(libs-y)
 
 # 链接脚本 (.lds) 通常需要预处理以支持条件编译
 # LDPPFLAGS 是传给 CPP 的标志：
-#   -include u-boot.lds.h: 强制包含链接脚本头文件
 #   -DCPUDIR: 传递 CPU 目录路径
 #   -DLD_MAJOR/-DLD_MINOR: 链接器版本号，用于兼容性处理
 LDPPFLAGS += \
@@ -667,14 +666,20 @@ u-boot.bin: u-boot FORCE
 #      -o $@:             输出文件 u-boot
 #      -T u-boot.lds:     使用链接脚本
 #      $(u-boot-init):    启动代码（head-y，如 start.o）
-#      $(u-boot-main):    主体代码（各目录的 built-in.o）
+#      --whole-archive：这是一个链接器选项，告诉链接器将后面跟的归档文件（.a）中的所有目标文件都链接进来，
+#      即使其中没有符号被引用。默认情况下，链接器只会从归档文件中提取那些解决了未定义符号的模块。
+#      $(u-boot-main):    主体代码（各目录的 built-in.o）被包裹在 --whole-archive 和 --no-whole-archive 之间，
+#      以确保所有必要的符号（如驱动入口、初始化函数）都被强制包含，避免因符号未引用而被丢弃。
+#      --no-whole-archive：关闭 --whole-archive 效果，后续的库恢复正常链接行为（只提取必要符号）。
 #      -Map u-boot.map:   生成内存映射文件，用于调试
 quiet_cmd_u-boot__ ?= LD      $@
       cmd_u-boot__ ?=								\
 		touch $(u-boot-main) ;						\
 		$(LD) $(KBUILD_LDFLAGS) $(LDFLAGS_u-boot) -o $@			\
 		-T u-boot.lds $(u-boot-init)					\
+		--whole-archive							\
 			$(u-boot-main)						\
+		--no-whole-archive						\
 		-Map u-boot.map
 
 # u-boot 目标规则
