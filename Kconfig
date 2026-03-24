@@ -93,3 +93,5 @@ config DM
 endmenu # General setup
 
 source "drivers/Kconfig"
+
+source "lib/Kconfig"

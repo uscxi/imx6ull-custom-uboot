@@ -80,11 +80,15 @@ ifndef obj
 $(warning kbuild: Makefile.build is included improperly)
 endif
 
+ifneq ($(strip $(lib-y) $(lib-)),)
+lib-target := $(obj)/lib.a
+endif
+
 ifneq ($(strip $(obj-y) $(obj-)),)
 builtin-target := $(obj)/built-in.o
 endif
 
-__build: $(builtin-target) $(extra-y) $(subdir-ym) $(always)
+__build: $(builtin-target) $(lib-target) $(extra-y) $(subdir-ym) $(always)
 	@:
 
 # Compile C sources (.c)
@@ -138,7 +142,7 @@ cmd_as_o_S       = $(CC) $(a_flags) -c -o $@ $<
 $(obj)/%.o: $(src)/%.S FORCE
 	$(call if_changed_dep,as_o_S)
 
-targets += $(real-objs-y) $(lib-y)
+targets += $(real-objs-y)
 targets += $(extra-y) $(MAKECMDGOALS) $(always)
 targets += $(lib-y) $(always-y)
 
@@ -169,6 +173,19 @@ $(builtin-target): $(obj-y) FORCE
 
 targets += $(builtin-target)
 endif # builtin-target
+
+#
+# Rule to compile a set of .o files into one .a file
+#
+ifdef lib-target
+quiet_cmd_link_l_target = AR      $@
+cmd_link_l_target = rm -f $@; $(AR) cDPrsT$(KBUILD_ARFLAGS) $@ $(lib-y)
+
+$(lib-target): $(lib-y) FORCE
+	$(call if_changed,link_l_target)
+
+targets += $(lib-target)
+endif
 
 # Add intermediate targets:
 # When building objects with specific suffix patterns, add intermediate

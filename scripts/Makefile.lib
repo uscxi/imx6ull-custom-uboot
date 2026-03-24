@@ -9,6 +9,12 @@ export KBUILD_SUBDIR_CCFLAGS := $(KBUILD_SUBDIR_CCFLAGS) $(subdir-ccflags-y)
 
 # When an object is listed to be built compiled-in and modular,
 # only build the compiled-in version
+
+# Libraries are always collected in one lib file.
+# Filter out objects already built-in
+
+lib-y := $(filter-out $(obj-y), $(sort $(lib-y)))
+
 __subdir-y	:= $(patsubst %/,%,$(filter %/, $(obj-y)))
 subdir-y	+= $(__subdir-y)
 obj-y		:= $(patsubst %/, %/built-in.o, $(obj-y))

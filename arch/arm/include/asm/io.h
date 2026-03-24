@@ -2,6 +2,7 @@
 #define __ASM_ARM_IO_H
 
 #include <linux/types.h>
+#include <linux/kernel.h>
 #include <asm/barriers.h>
 
 /* Generic virtual read/write. */

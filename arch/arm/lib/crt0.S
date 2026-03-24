@@ -1,6 +1,7 @@
 #include <config.h>
 #include <asm-offsets.h>
 #include <linux/linkage.h>
+#include <asm/assembler.h>
 #include <system-constants.h>
 
 /*
@@ -22,12 +23,22 @@ ENTRY(_main)
     bic	r0, r0, #7	/* 8-byte alignment for ABI compliance */
     /*设置栈指针，有了基本栈，可以调用 C 函数了！*/
     mov	sp, r0
+    /*为早期初始化分配内存（包括gd和栈）*/
+    bl	board_init_f_alloc_reserve
+    /* 更新栈指针到分配的空间 */
+    mov	sp, r0
+    /* set up gd here, outside any C code */
+    /*r9 = gd指针，在 C 代码外设置 gd，避免编译器优化问题*/
+    mov	r9, r0
+    /*初始化分配的内存，清零gd等*/
+    bl	board_init_f_init_reserve
 
 /*早期串口初始化，便于调试输出*/
 #if defined(CONFIG_DEBUG_UART) && CONFIG_IS_ENABLED(SERIAL)
     bl	debug_uart_init
 #endif
 
-    bl	main_loop
+    mov	r0, #0
+    bl	board_init_f
 
 ENDPROC(_main)

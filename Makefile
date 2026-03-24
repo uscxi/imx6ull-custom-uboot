@@ -303,7 +303,7 @@ export CONFIG_SHELL HOSTCC KBUILD_HOSTCFLAGS CROSS_COMPILE AS LD CC
 export CPP AR NM LDR STRIP OBJCOPY OBJDUMP KBUILD_HOSTLDFLAGS KBUILD_HOSTLDLIBS
 export LEX YACC
 export KBUILD_CPPFLAGS KBUILD_CFLAGS KBUILD_AFLAGS
-export UBOOTINCLUDE KBUILD_LDFLAGS
+export NOSTDINC_FLAGS UBOOTINCLUDE KBUILD_LDFLAGS
 
 export CC_VERSION_TEXT := $(shell $(CC) --version | head -n 1)
 
@@ -545,10 +545,13 @@ LTO_CFLAGS :=
 LTO_FINAL_LDFLAGS :=
 export LTO_CFLAGS LTO_FINAL_LDFLAGS
 
+# change __FILE__ to the relative path from the srctree
+KBUILD_CFLAGS	+= $(call cc-option,-fmacro-prefix-map=$(srctree)/=)
+
 UBOOTINCLUDE    := \
 	-Iinclude \
 	$(if $(KBUILD_SRC), -I$(srctree)/include) \
-	-I$(srctree)/arch/$(ARCH)/include	\
+	-I$(srctree)/arch/$(ARCH)/include \
 	-include $(srctree)/include/linux/kconfig.h
 
 # -nostdinc: 不搜索标准系统头文件目录
@@ -564,6 +567,7 @@ cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(UBOOTINCLUDE) \
 c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
 
 libs-y += common/
+libs-y += lib/
 libs-y += drivers/
 
 # sort 去重并按字母排序
@@ -594,6 +598,19 @@ u-boot-init := $(head-y)
 # u-boot-main: 其余所有编译产物
 u-boot-main := $(libs-y)
 
+# Add GCC lib
+ifeq ($(CONFIG_USE_PRIVATE_LIBGCC),y)
+PLATFORM_LIBGCC = arch/$(ARCH)/lib/lib.a
+else
+ifndef CONFIG_CC_IS_CLANG
+PLATFORM_LIBGCC := -L $(shell dirname `$(CC) $(c_flags) -print-libgcc-file-name`) -lgcc
+endif
+endif
+PLATFORM_LIBS += $(PLATFORM_LIBGCC)
+
+export PLATFORM_LIBS
+export PLATFORM_LIBGCC
+
 # 链接脚本 (.lds) 通常需要预处理以支持条件编译
 # LDPPFLAGS 是传给 CPP 的标志：
 #   -DCPUDIR: 传递 CPU 目录路径
@@ -604,7 +621,7 @@ LDPPFLAGS += \
 	  sed -ne 's/GNU ld version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/-DLD_MAJOR=\1 -DLD_MINOR=\2/p')
 
 # INPUTS-y: 最终要生成的二进制文件列表
-INPUTS-y += u-boot.bin
+INPUTS-y += u-boot.bin System.map
 
 # 链接标志
 # LDFLAGS_FINAL: 由架构 Makefile 定义的最终链接选项
@@ -680,7 +697,7 @@ quiet_cmd_u-boot__ ?= LD      $@
 		--whole-archive							\
 			$(u-boot-main)						\
 		--no-whole-archive						\
-		-Map u-boot.map
+		$(PLATFORM_LIBS) -Map u-boot.map
 
 # u-boot 目标规则
 # 依赖：
@@ -872,6 +889,26 @@ cmd_cpp_lds = $(CPP) -Wp,-MD,$(depfile) $(cpp_flags) $(LDPPFLAGS) \
 # if_changed_dep: 同 if_changed，但额外处理依赖文件（.d to .cmd 转换）
 u-boot.lds: $(LDSCRIPT) prepare FORCE
 	$(call if_changed_dep,cpp_lds)
+
+SYSTEM_MAP = \
+		$(NM) $1 | \
+		grep -v '\(compiled\)\|\(\.o$$\)\|\( [aUw] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)' | \
+		LC_ALL=C sort
+System.map:	u-boot
+		@$(call SYSTEM_MAP,$<) > $@
+
+#########################################################################
+
+# ARM relocations should all be R_ARM_RELATIVE (32-bit) or
+# R_AARCH64_RELATIVE (64-bit).
+checkarmreloc: u-boot
+	@RELOC="`$(CROSS_COMPILE)readelf -r -W $< | cut -d ' ' -f 4 | \
+		grep R_A | sort -u`"; \
+	if test "$$RELOC" != "R_ARM_RELATIVE" -a \
+		 "$$RELOC" != "R_AARCH64_RELATIVE"; then \
+		echo "$< contains unexpected relocations: $$RELOC"; \
+		false; \
+	fi
 
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  += 
