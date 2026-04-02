@@ -9,6 +9,8 @@ config ARM
 	bool "ARM architecture"
     select CREATE_ARCH_SYMLINK
     select HAVE_PRIVATE_LIBGCC if !ARM64
+    select SUPPORT_LITTLE_ENDIAN
+    select SUPPORT_OF_CONTROL
 
 endchoice
 
@@ -68,3 +70,22 @@ config SYS_CONFIG_NAME
 	  should be included from include/config.h.
 
 source "arch/arm/Kconfig"
+
+choice
+	prompt "Endianness selection"
+	default SYS_BIG_ENDIAN if MIPS || MICROBLAZE
+	default SYS_LITTLE_ENDIAN
+	help
+	  Some boards can be configured for either little or big endian
+	  byte order. These modes require different U-Boot images. In general there
+	  is one preferred byteorder for a particular system but some systems are
+	  just as commonly used in the one or the other endianness.
+
+config SYS_BIG_ENDIAN
+	bool "Big endian"
+	depends on SUPPORT_BIG_ENDIAN
+
+config SYS_LITTLE_ENDIAN
+	bool "Little endian"
+	depends on SUPPORT_LITTLE_ENDIAN
+endchoice

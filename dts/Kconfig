@@ -1,0 +1,84 @@
+#
+# Device Tree Control
+#
+
+config SUPPORT_OF_CONTROL
+	bool
+
+menu "Device Tree Control"
+	depends on SUPPORT_OF_CONTROL
+
+config OF_CONTROL
+	bool "Run-time configuration via Device Tree"
+	select OF_LIBFDT
+	select OF_REAL
+	help
+	  This feature provides for run-time configuration of U-Boot
+	  via a flattened device tree.
+
+choice
+	prompt "Provider of DTB for DT control"
+	depends on OF_CONTROL
+
+config OF_SEPARATE
+	bool "Separate DTB for DT control"
+	help
+	  If this option is enabled, the device tree will be built and
+	  placed as a separate u-boot.dtb file alongside the U-Boot image.
+
+config OF_EMBED
+	bool "Embedded DTB for DT control"
+	help
+	  If this option is enabled, the device tree will be picked up and
+	  built into the U-Boot image. This is suitable for local debugging
+	  and development only and is not recommended for production devices.
+	  Boards in the mainline U-Boot tree should not use it.
+
+endchoice
+
+config DEFAULT_DEVICE_TREE
+	string "Default Device Tree for DT control"
+	depends on OF_CONTROL
+	help
+	  This option specifies the default Device Tree used for DT control.
+	  It can be overridden from the command line:
+	  $ make DEVICE_TREE=<device-tree-name>
+
+config DEVICE_TREE_INCLUDES
+       string "Extra .dtsi files to include when building DT control"
+	depends on OF_CONTROL
+	help
+	  U-Boot's control .dtb is usually built from an in-tree .dts
+	  file, plus (if available) an in-tree U-Boot-specific .dtsi
+	  file. This option specifies a space-separated list of extra
+	  .dtsi files that will also be used.
+
+config OF_LIST
+	string "List of device tree files to include for DT control" if SPL_LOAD_FIT || MULTI_DTB_FIT
+	depends on OF_CONTROL
+	default DEFAULT_DEVICE_TREE
+	help
+	  This option specifies a list of device tree files to use for DT
+	  control. These will be packaged into a FIT. At run-time, U-Boot
+	  or SPL will select the correct DT to use by examining the
+	  hardware (e.g. reading a board ID value). This is a list of
+	  device tree files (without the directory or .dtb suffix)
+	  separated by <space>.
+
+config OF_OVERLAY_LIST
+	string "List of device tree overlays to include for DT control"
+	help
+	  This option specifies a list of device tree overlays to use for DT
+	  control. This option can then be used by a FIT generator to include
+	  the overlays in the FIT image or by binman when assembling an image
+	  that uses overlays during DT fixup.
+
+config MULTI_DTB_FIT_UNCOMPRESS_SZ
+	hex "Size of memory reserved to uncompress the DTBs"
+	default 0x8000
+	help
+	   This is the size of this area where the DTBs are uncompressed.
+	   If this area is dynamically allocated, make sure that
+	   SYS_MALLOC_F_LEN is big enough to contain it.
+
+endmenu

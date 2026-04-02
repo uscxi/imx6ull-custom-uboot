@@ -51,7 +51,7 @@ ENTRY(__aeabi_uldivmod)
 
 L_div_64_64:
 /* CLZ only exists in ARM architecture version 5 and above. */
-#ifdef HAVE_CLZ
+#if __LINUX_ARM_ARCH__ >= 5
 	mov	C_0, #1
 	mov	C_1, #0
 	@ D_0 = clz A
@@ -166,7 +166,7 @@ L_div_32_32:
 	ldmfd	sp!, {r4, r5, r6, r7, THUMB(TMP,) pc}
 
 L_pow2:
-#ifdef HAVE_CLZ
+#if __LINUX_ARM_ARCH__ >= 5
 	@ Note: A, B and Q, R are aliases
 	@ R = A & (B - 1)
 	and	C_0, A_0, C_0

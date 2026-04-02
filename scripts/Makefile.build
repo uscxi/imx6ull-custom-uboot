@@ -144,7 +144,7 @@ $(obj)/%.o: $(src)/%.S FORCE
 
 targets += $(real-objs-y)
 targets += $(extra-y) $(MAKECMDGOALS) $(always)
-targets += $(lib-y) $(always-y)
+targets += $(real-dtb-y) $(lib-y) $(always-y)
 
 # Linker scripts preprocessor (.lds.S -> .lds)
 # ---------------------------------------------------------------------------
