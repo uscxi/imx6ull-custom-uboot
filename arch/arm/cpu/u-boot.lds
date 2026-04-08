@@ -36,6 +36,9 @@ SECTIONS{
     
     . = ALIGN(4);
 
+    _end = .;
+    _image_binary_end = .;
+
 	.bss :
     {
         __bss_start = .;

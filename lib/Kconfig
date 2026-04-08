@@ -3,6 +3,10 @@ menu "Library routines"
 config HAVE_PRIVATE_LIBGCC
 	bool
 
+config PRINTF
+	bool
+	default y
+
 config USE_PRIVATE_LIBGCC
 	bool "Use private libgcc"
 	depends on HAVE_PRIVATE_LIBGCC
@@ -11,5 +15,26 @@ config USE_PRIVATE_LIBGCC
 	  This option allows you to use the built-in libgcc implementation
 	  of U-Boot instead of the one provided by the compiler.
 	  If unsure, say N.
+
+config OF_LIBFDT
+	bool "Enable the FDT library"
+	default y if OF_CONTROL
+	help
+	  This enables the FDT library (libfdt). It provides functions for
+	  accessing binary device tree images in memory, such as adding and
+	  removing nodes and properties, scanning through the tree and finding
+	  particular compatible nodes. The library operates on a flattened
+	  version of the device tree.
+
+config OF_LIBFDT_ASSUME_MASK
+	hex "Mask of conditions to assume for libfdt"
+	depends on OF_LIBFDT || FIT
+	default 0x0
+	help
+	  Use this to change the assumptions made by libfdt about the
+	  device tree it is working with. A value of 0 means that no assumptions
+	  are made, and libfdt is able to deal with malicious data. A value of
+	  0xff means all assumptions are made and any invalid data may cause
+	  unsafe execution. See FDT_ASSUME_PERFECT, etc. in libfdt_internal.h
 
 endmenu

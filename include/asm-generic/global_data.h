@@ -21,6 +21,7 @@
 
 #ifndef __ASSEMBLY__
 #include <asm-offsets.h>
+#include <fdtdec.h>
 #include <linux/build_bug.h>
 
 typedef struct global_data gd_t;
@@ -41,6 +42,11 @@ struct global_data {
 	 * @fdt_blob: U-Boot's own device tree, NULL if none
 	 */
 	const void *fdt_blob;
+
+    /**
+	 * @fdt_src: Source of FDT
+	 */
+	enum fdt_source_t fdt_src;
 // 	/**
 // 	 * @cur_serial_dev: current serial device
 // 	 */
@@ -150,7 +156,11 @@ enum gd_flags {
 	 * @GD_FLG_DEVINIT: devices have been initialized
 	 */
 	GD_FLG_DEVINIT = 0x00002,
-    	/**
+    /**
+	 * @GD_FLG_SERIAL_READY: pre-relocation serial console ready
+	 */
+	GD_FLG_SERIAL_READY = 0x00100,
+    /**
 	 * @GD_FLG_HAVE_CONSOLE: serial_init() was called and a console
 	 * is available. When not set, indicates that console input and output
 	 * drivers shall not be called.

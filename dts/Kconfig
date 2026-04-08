@@ -16,6 +16,14 @@ config OF_CONTROL
 	  This feature provides for run-time configuration of U-Boot
 	  via a flattened device tree.
 
+config OF_REAL
+	bool
+	help
+	  Indicates that a real devicetree is available which can be accessed
+	  at runtime. This means that dev_read_...() functions can be used to
+	  read data from the devicetree for each device. This is true if
+	  OF_CONTROL is enabled in U-Boot proper.
+
 choice
 	prompt "Provider of DTB for DT control"
 	depends on OF_CONTROL

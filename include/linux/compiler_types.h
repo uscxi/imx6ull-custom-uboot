@@ -4,6 +4,12 @@
 
 #ifndef __ASSEMBLY__
 
+#ifdef __CHECKER__
+# define __force	__attribute__((force))
+#else /* __CHECKER__ */
+# define __force
+#endif /* __CHECKER__ */
+
 #ifdef __KERNEL__
 
 /* Attributes */
@@ -19,6 +25,12 @@
 
 #ifdef CONFIG_HAVE_ARCH_COMPILER_H
 #include <asm/compiler.h>
+#endif
+
+#ifdef CONFIG_ENABLE_MUST_CHECK
+#define __must_check		__attribute__((__warn_unused_result__))
+#else
+#define __must_check
 #endif
 
 #endif /* __KERNEL__ */

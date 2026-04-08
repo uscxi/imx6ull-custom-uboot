@@ -5,11 +5,32 @@
 #include <asm/types.h>
 #include <stdbool.h>
 
-/* sysv */
-typedef unsigned char		uchar;
-typedef unsigned short		ushort;
-typedef unsigned int		uint;
-typedef unsigned long		ulong;
+#ifndef __KERNEL_STRICT_NAMES
+
+typedef __kernel_fd_set		fd_set;
+typedef __kernel_dev_t		dev_t;
+typedef __kernel_ino_t		ino_t;
+typedef __kernel_mode_t		mode_t;
+typedef __kernel_nlink_t	nlink_t;
+typedef __kernel_off_t		off_t;
+typedef __kernel_pid_t		pid_t;
+typedef __kernel_daddr_t	daddr_t;
+typedef __kernel_key_t		key_t;
+typedef __kernel_suseconds_t	suseconds_t;
+
+#ifdef __KERNEL__
+typedef __kernel_uid32_t	uid_t;
+typedef __kernel_gid32_t	gid_t;
+typedef __kernel_uid16_t        uid16_t;
+typedef __kernel_gid16_t        gid16_t;
+
+typedef unsigned long		uintptr_t;
+
+#endif /* __KERNEL__ */
+
+#if defined(__GNUC__) && !defined(__STRICT_ANSI__)
+typedef __kernel_loff_t		loff_t;
+#endif
 
 /*
  * The following typedefs are also protected by individual ifdefs for
@@ -19,5 +40,80 @@ typedef unsigned long		ulong;
 #define _SIZE_T
 typedef __kernel_size_t		size_t;
 #endif
+
+#ifndef _SSIZE_T
+#define _SSIZE_T
+typedef __kernel_ssize_t	ssize_t;
+#endif
+
+#ifndef _PTRDIFF_T
+#define _PTRDIFF_T
+typedef __kernel_ptrdiff_t	ptrdiff_t;
+#endif
+
+/* sysv */
+typedef unsigned char		uchar;
+typedef unsigned short		ushort;
+typedef unsigned int		uint;
+typedef unsigned long		ulong;
+
+#ifndef __BIT_TYPES_DEFINED__
+#define __BIT_TYPES_DEFINED__
+
+typedef		__u8		u_int8_t;
+typedef		__s8		int8_t;
+typedef		__u16		u_int16_t;
+typedef		__s16		int16_t;
+typedef		__u32		u_int32_t;
+typedef		__s32		int32_t;
+
+#endif /* !(__BIT_TYPES_DEFINED__) */
+
+typedef		__u8		uint8_t;
+typedef		__u16		uint16_t;
+typedef		__u32		uint32_t;
+
+#if defined(__GNUC__) && !defined(__STRICT_ANSI__)
+typedef		__u64		uint64_t;
+typedef		__u64		u_int64_t;
+typedef		__s64		int64_t;
+#endif
+
+#endif /* __KERNEL_STRICT_NAMES */
+
+/* this is a special 64bit data type that is 8-byte aligned */
+#define aligned_u64 __u64 __aligned(8)
+#define aligned_be64 __be64 __aligned(8)
+#define aligned_le64 __le64 __aligned(8)
+
+#ifdef __KERNEL__
+typedef phys_addr_t resource_size_t;
+#endif
+
+/*
+ * Below are truly Linux-specific types that should never collide with
+ * any application/library that wants linux/types.h.
+ */
+#ifdef __CHECKER__
+#define __bitwise__ __attribute__((bitwise))
+#else
+#define __bitwise__
+#endif
+#ifdef __CHECK_ENDIAN__
+#define __bitwise __bitwise__
+#else
+#define __bitwise
+#endif
+
+typedef __u16 __bitwise __le16;
+typedef __u16 __bitwise __be16;
+typedef __u32 __bitwise __le32;
+typedef __u32 __bitwise __be32;
+#if defined(__GNUC__)
+typedef __u64 __bitwise __le64;
+typedef __u64 __bitwise __be64;
+#endif
+typedef __u16 __bitwise __sum16;
+typedef __u32 __bitwise __wsum;
 
 #endif /* _LINUX_TYPES_H */

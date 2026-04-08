@@ -5,7 +5,7 @@ lib-$(CONFIG_USE_PRIVATE_LIBGCC) += ashldi3.o ashrdi3.o lshrdi3.o \
 obj-y	+= vectors.o crt0.o
 
 obj-$(CONFIG_$(PHASE_)USE_ARCH_MEMSET) += memset.o
-
+obj-$(CONFIG_$(PHASE_)USE_ARCH_MEMCPY) += memcpy.o
 
 # some files can only build in ARM or THUMB2, not THUMB1
 
