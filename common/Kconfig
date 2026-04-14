@@ -12,6 +12,20 @@ config CONSOLE_FLUSH_SUPPORT
 	help
 	  This enables compilation of flush() function for console flush support.
 
+config SYS_CBSIZE
+	int "Console input buffer size"
+	default 2048 if ARCH_TEGRA || ARCH_VERSAL || ARCH_ZYNQ || ARCH_ZYNQMP || \
+		RCAR_GEN3 || TARGET_SOCFPGA_SOC64
+	default 512 if ARCH_MX5 || ARCH_MX6 || ARCH_MX7 || FSL_LSCH2 || \
+		FSL_LSCH3 || X86
+	default 256 if M68K || PPC
+	default 1024
+	help
+	  Set the size of the console input buffer. This is used both in the
+	  case of reading input literally from the user in some manner as well
+	  as when we need to construct or modify that type of input, for
+	  example when constructing "bootargs" for the OS.
+
 config SYS_PBSIZE
 	int "Console output buffer size"
 	default 1024 if ARCH_SUNXI
@@ -21,9 +35,95 @@ config SYS_PBSIZE
 	  to work with some form of a buffer while providing output in some
 	  form to the user.
 
+config LOGLEVEL
+	int "loglevel"
+	default 4
+	range 0 10
+	help
+	  All Messages with a loglevel smaller than the console loglevel will
+	  be compiled in. The loglevels are defined as follows:
+
+	    0 - emergency
+	    1 - alert
+	    2 - critical
+	    3 - error
+	    4 - warning
+	    5 - note
+	    6 - info
+	    7 - debug
+	    8 - debug content
+	    9 - debug hardware I/O
+
 config IDENT_STRING
 	string "Board specific string to be added to uboot version string"
 	help
 	  This options adds the board specific name to u-boot version.
+
+endmenu
+
+menu "Logging"
+
+config LOG
+	bool "Enable logging support"
+	depends on DM
+	help
+	  This enables support for logging of status and debug messages. These
+	  can be displayed on the console, recorded in a memory buffer, or
+	  discarded if not needed. Logging supports various categories and
+	  levels of severity.
+
+if LOG
+
+config LOG_MAX_LEVEL
+	int "Maximum log level to record"
+	default 6
+	range 0 9
+	help
+	  This selects the maximum log level that will be recorded. Any value
+	  higher than this will be ignored. If possible log statements below
+	  this level will be discarded at build time. Levels:
+
+	    0 - emergency
+	    1 - alert
+	    2 - critical
+	    3 - error
+	    4 - warning
+	    5 - note
+	    6 - info
+	    7 - debug
+	    8 - debug content
+	    9 - debug hardware I/O
+
+config LOG_DEFAULT_LEVEL
+	int "Default logging level to display"
+	default LOG_MAX_LEVEL
+	range 0 LOG_MAX_LEVEL
+	help
+	  This is the default logging level set when U-Boot starts. It can
+	  be adjusted later using the 'log level' command. Note that setting
+	  this to a value above LOG_MAX_LEVEL will be ineffective, since the
+	  higher levels are not compiled in to U-Boot.
+
+	    0 - emergency
+	    1 - alert
+	    2 - critical
+	    3 - error
+	    4 - warning
+	    5 - note
+	    6 - info
+	    7 - debug
+	    8 - debug content
+	    9 - debug hardware I/O
+
+config LOG_CONSOLE
+	bool "Allow log output to the console"
+	default y
+	help
+	  Enables a log driver which writes log records to the console.
+	  Generally the console is the serial port or LCD display. Only the
+	  log message is shown - other details like level, category, file and
+	  line number are omitted.
+
+endif
 
 endmenu

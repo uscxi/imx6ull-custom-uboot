@@ -13,6 +13,52 @@ extern "C" {
  */
 #include <asm/string.h>
 
+#ifndef __HAVE_ARCH_STRCPY
+extern char * strcpy(char *,const char *);
+#endif
+#ifndef __HAVE_ARCH_STRNCPY
+extern char * strncpy(char *,const char *, __kernel_size_t);
+#endif
+#ifndef __HAVE_ARCH_STRLCPY
+size_t strlcpy(char *, const char *, size_t);
+#endif
+#ifndef __HAVE_ARCH_STRCAT
+extern char * strcat(char *, const char *);
+#endif
+#ifndef __HAVE_ARCH_STRNCAT
+extern char * strncat(char *, const char *, __kernel_size_t);
+#endif
+#ifndef __HAVE_ARCH_STRLCAT
+size_t strlcat(char *, const char *, size_t);
+#endif
+#ifndef __HAVE_ARCH_STRCMP
+extern int strcmp(const char *,const char *);
+#endif
+#ifndef __HAVE_ARCH_STRNCMP
+extern int strncmp(const char *,const char *,__kernel_size_t);
+#endif
+#ifndef __HAVE_ARCH_STRCASECMP
+int strcasecmp(const char *s1, const char *s2);
+#endif
+#ifndef __HAVE_ARCH_STRNCASECMP
+extern int strncasecmp(const char *s1, const char *s2, __kernel_size_t len);
+#endif
+#ifndef __HAVE_ARCH_STRCHR
+extern char * strchr(const char *,int);
+#endif
+
+/**
+ * strchrnul() - return position of a character in the string, or end of string
+ *
+ * The strchrnul() function is like strchr() except that if c is not found
+ * in s, then it returns a pointer to the nul byte at the end of s, rather than
+ * NULL
+ * @s: string to search
+ * @c: character to search for
+ * Return: position of @c in @s, or end of @s if not found
+ */
+const char *strchrnul(const char *s, int c);
+
 #ifndef __HAVE_ARCH_STRRCHR
 extern char * strrchr(const char *,int);
 #endif

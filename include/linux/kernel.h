@@ -33,6 +33,12 @@
 
 #define STACK_MAGIC	0xdeadbeef
 
+#define ALIGN(x,a)		__ALIGN_MASK((x),(typeof(x))(a)-1)
+#define ALIGN_DOWN(x, a)	ALIGN((x) - ((a) - 1), (a))
+#define __ALIGN_MASK(x,mask)	(((x)+(mask))&~(mask))
+#define PTR_ALIGN(p, a)		((typeof(p))ALIGN((unsigned long)(p), (a)))
+#define IS_ALIGNED(x, a)		(((x) & ((typeof(x))(a) - 1)) == 0)
+
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 /* The `const' in roundup() prevents gcc-3.3 from calling __divdi3 */
@@ -77,5 +83,21 @@
 }							\
 )
 
+/*
+ * swap - swap value of @a and @b
+ */
+#define swap(a, b) \
+	do { typeof(a) __tmp = (a); (a) = (b); (b) = __tmp; } while (0)
+
+/**
+ * container_of - cast a member of a structure out to the containing structure
+ * @ptr:	the pointer to the member.
+ * @type:	the type of the container struct this is embedded in.
+ * @member:	the name of the member within the struct.
+ *
+ */
+#define container_of(ptr, type, member) ({			\
+	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
+	(type *)( (char *)__mptr - offsetof(type,member) );})
 
 #endif

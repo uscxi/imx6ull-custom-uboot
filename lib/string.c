@@ -18,8 +18,256 @@
  #include <asm/sections.h>
 #include <config.h>
 #include <linux/compiler.h>
+#include <linux/ctype.h>
 #include <linux/string.h>
 #include <linux/types.h>
+
+/**
+ * strncasecmp - Case insensitive, length-limited string comparison
+ * @s1: One string
+ * @s2: The other string
+ * @len: the maximum number of characters to compare
+ */
+int strncasecmp(const char *s1, const char *s2, size_t len)
+{
+	/* Yes, Virginia, it had better be unsigned */
+	unsigned char c1, c2;
+
+	c1 = 0;	c2 = 0;
+	if (len) {
+		do {
+			c1 = *s1; c2 = *s2;
+			s1++; s2++;
+			if (!c1)
+				break;
+			if (!c2)
+				break;
+			if (c1 == c2)
+				continue;
+			c1 = tolower(c1);
+			c2 = tolower(c2);
+			if (c1 != c2)
+				break;
+		} while (--len);
+	}
+	return (int)c1 - (int)c2;
+}
+
+/**
+ * strcasecmp - Case insensitive string comparison
+ * @s1: One string
+ * @s2: The other string
+ */
+int strcasecmp(const char *s1, const char *s2)
+{
+	return strncasecmp(s1, s2, -1U);
+}
+
+char * ___strtok;
+
+#ifndef __HAVE_ARCH_STRCPY
+/**
+ * strcpy - Copy a %NUL terminated string
+ * @dest: Where to copy the string to
+ * @src: Where to copy the string from
+ */
+char * strcpy(char * dest,const char *src)
+{
+	char *tmp = dest;
+
+	while ((*dest++ = *src++) != '\0')
+		/* nothing */;
+	return tmp;
+}
+#endif
+
+#ifndef __HAVE_ARCH_STRNCPY
+/**
+ * strncpy - Copy a length-limited, %NUL-terminated string
+ * @dest: Where to copy the string to
+ * @src: Where to copy the string from
+ * @count: The maximum number of bytes to copy
+ *
+ * Note that unlike userspace strncpy, this does not %NUL-pad the buffer.
+ * However, the result is not %NUL-terminated if the source exceeds
+ * @count bytes.
+ */
+char * strncpy(char * dest,const char *src,size_t count)
+{
+	char *tmp = dest;
+
+	while (count-- && (*dest++ = *src++) != '\0')
+		/* nothing */;
+
+	return tmp;
+}
+#endif
+
+#ifndef __HAVE_ARCH_STRLCPY
+/**
+ * strlcpy - Copy a C-string into a sized buffer
+ * @dest: Where to copy the string to
+ * @src: Where to copy the string from
+ * @size: size of destination buffer
+ *
+ * Compatible with *BSD: the result is always a valid
+ * NUL-terminated string that fits in the buffer (unless,
+ * of course, the buffer size is zero). It does not pad
+ * out the result like strncpy() does.
+ *
+ * Return: strlen(src)
+ */
+size_t strlcpy(char *dest, const char *src, size_t size)
+{
+	size_t ret = strlen(src);
+
+	if (size) {
+		size_t len = (ret >= size) ? size - 1 : ret;
+		memcpy(dest, src, len);
+		dest[len] = '\0';
+	}
+	return ret;
+}
+#endif
+
+#ifndef __HAVE_ARCH_STRCAT
+/**
+ * strcat - Append one %NUL-terminated string to another
+ * @dest: The string to be appended to
+ * @src: The string to append to it
+ */
+char * strcat(char * dest, const char * src)
+{
+	char *tmp = dest;
+
+	while (*dest)
+		dest++;
+	while ((*dest++ = *src++) != '\0')
+		;
+
+	return tmp;
+}
+#endif
+
+#ifndef __HAVE_ARCH_STRNCAT
+/**
+ * strncat - Append a length-limited, %NUL-terminated string to another
+ * @dest: The string to be appended to
+ * @src: The string to append to it
+ * @count: The maximum numbers of bytes to copy
+ *
+ * Note that in contrast to strncpy, strncat ensures the result is
+ * terminated.
+ */
+char * strncat(char *dest, const char *src, size_t count)
+{
+	char *tmp = dest;
+
+	if (count) {
+		while (*dest)
+			dest++;
+		while ((*dest++ = *src++)) {
+			if (--count == 0) {
+				*dest = '\0';
+				break;
+			}
+		}
+	}
+
+	return tmp;
+}
+#endif
+
+#ifndef __HAVE_ARCH_STRLCAT
+/**
+ * strlcat - Append a length-limited, %NUL-terminated string to another
+ * @dest: The string to be appended to
+ * @src: The string to append to it
+ * @size: The size of @dest
+ *
+ * Compatible with *BSD: the result is always a valid NUL-terminated string that
+ * fits in the buffer (unless, of course, the buffer size is zero). It does not
+ * write past @size like strncat() does.
+ *
+ * Return: min(strlen(dest), size) + strlen(src)
+ */
+size_t strlcat(char *dest, const char *src, size_t size)
+{
+	size_t len = strnlen(dest, size);
+
+	return len + strlcpy(dest + len, src, size - len);
+}
+#endif
+
+#ifndef __HAVE_ARCH_STRCMP
+/**
+ * strcmp - Compare two strings
+ * @cs: One string
+ * @ct: Another string
+ */
+int strcmp(const char *cs, const char *ct)
+{
+	int ret;
+
+	while (1) {
+		unsigned char a = *cs++;
+		unsigned char b = *ct++;
+
+		ret = a - b;
+		if (ret || !b)
+			break;
+	}
+
+	return ret;
+}
+#endif
+
+#ifndef __HAVE_ARCH_STRNCMP
+/**
+ * strncmp - Compare two length-limited strings
+ * @cs: One string
+ * @ct: Another string
+ * @count: The maximum number of bytes to compare
+ */
+int strncmp(const char *cs, const char *ct, size_t count)
+{
+	int ret = 0;
+
+	while (count--) {
+		unsigned char a = *cs++;
+		unsigned char b = *ct++;
+
+		ret = a - b;
+		if (ret || !b)
+			break;
+	}
+
+	return ret;
+}
+#endif
+
+#ifndef __HAVE_ARCH_STRCHR
+/**
+ * strchr - Find the first occurrence of a character in a string
+ * @s: The string to be searched
+ * @c: The character to search for
+ */
+char * strchr(const char * s, int c)
+{
+	for(; *s != (char) c; ++s)
+		if (*s == '\0')
+			return NULL;
+	return (char *) s;
+}
+#endif
+
+const char *strchrnul(const char *s, int c)
+{
+	for (; *s != (char)c; ++s)
+		if (*s == '\0')
+			break;
+	return s;
+}
 
 #ifndef __HAVE_ARCH_STRRCHR
 /**

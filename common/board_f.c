@@ -1,12 +1,16 @@
 #include <config.h>
 #include <initcall.h>
 #include <init.h>
+#include <log.h>
+#include <malloc.h>
 #include <asm/global_data.h>
 #include <asm/io.h>
 #include <asm/sections.h>
 #include <hang.h>
 #include <log.h>
 #include <fdtdec.h>
+#include <linux/errno.h>
+#include <linux/log2.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -24,6 +28,8 @@ static const init_fnc_t init_sequence_f[] = {
 #ifdef CONFIG_OF_CONTROL
 	fdtdec_setup,
 #endif
+    initf_malloc,
+    log_init,
     NULL,
 };
 

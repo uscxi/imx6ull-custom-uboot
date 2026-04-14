@@ -1,5 +1,6 @@
 #include <config.h>
 #include <init.h>
+#include <log.h>
 
 /*
  * LED init
@@ -52,7 +53,8 @@ void main_loop(void)
 {
     led_init();			/* 初始化led */
 
-    printascii("Early Debug UART for IMX6ULL\n");
+    log(LOGC_TEST, LOGL_INFO, "LOG TEST!\n");
+    debug("Early Debug UART for IMX6ULL\n");
 
 	while(1)			/* 死循环 */
 	{	

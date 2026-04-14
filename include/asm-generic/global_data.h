@@ -137,6 +137,60 @@ struct global_data {
 	 */
 	unsigned int malloc_ptr;
 #endif
+
+#ifdef CONFIG_LOG
+	/**
+	 * @log_head: list of logging devices
+	 */
+	struct list_head log_head;
+	/**
+	 * @log_fmt: bit mask for logging format
+	 *
+	 * The @log_fmt bit mask selects the fields to be shown in log messages.
+	 * &enum log_fmt defines the bits of the bit mask.
+	 */
+	/**
+	 * @log_drop_count: number of dropped log messages
+	 *
+	 * This counter is incremented for each log message which can not
+	 * be processed because logging is not yet available as signaled by
+	 * flag %GD_FLG_LOG_READY in @flags.
+	 */
+	int log_drop_count;
+	/**
+	 * @default_log_level: default logging level
+	 *
+	 * For logging devices without filters @default_log_level defines the
+	 * logging level, cf. &enum log_level_t.
+	 */
+	char default_log_level;
+	char log_fmt;
+	/**
+	 * @logc_prev: logging category of previous message
+	 *
+	 * This value is used as logging category for continuation messages.
+	 */
+	unsigned char logc_prev;
+	/**
+	 * @logl_prev: logging level of the previous message
+	 *
+	 * This value is used as logging level for continuation messages.
+	 */
+	unsigned char logl_prev;
+	/**
+	 * @log_cont: Previous log line did not finished wtih \n
+	 *
+	 * This allows for chained log messages on the same line
+	 */
+	bool log_cont;
+	/**
+	 * @processing_msg: a log message is being processed
+	 *
+	 * This flag is used to suppress the creation of additional messages
+	 * while another message is being processed.
+	 */
+	bool processing_msg;
+#endif
 };
 #ifndef DO_DEPS_ONLY
 static_assert(sizeof(struct global_data) == GD_SIZE);
@@ -157,9 +211,21 @@ enum gd_flags {
 	 */
 	GD_FLG_DEVINIT = 0x00002,
     /**
+	 * @GD_FLG_LOGINIT: log Buffer has been initialized
+	 */
+	GD_FLG_LOGINIT = 0x00020,
+    /**
 	 * @GD_FLG_SERIAL_READY: pre-relocation serial console ready
 	 */
 	GD_FLG_SERIAL_READY = 0x00100,
+    /**
+	 * @GD_FLG_FULL_MALLOC_INIT: full malloc() is ready
+	 */
+	GD_FLG_FULL_MALLOC_INIT = 0x00200,
+    /**
+	 * @GD_FLG_LOG_READY: log system is ready for use
+	 */
+	GD_FLG_LOG_READY = 0x10000,
     /**
 	 * @GD_FLG_HAVE_CONSOLE: serial_init() was called and a console
 	 * is available. When not set, indicates that console input and output

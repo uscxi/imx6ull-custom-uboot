@@ -24,5 +24,10 @@ typedef __be64 unaligned_fdt64_t __aligned(4);
 #define fdt64_to_cpu(x) be64_to_cpu(x)
 #define cpu_to_fdt64(x) cpu_to_be64(x)
 
+/* U-Boot: for strtoul in fdt_overlay.c */
+#include <vsprintf.h>
+
+#define strtoul(cp, endp, base)	simple_strtoul(cp, endp, base)
+
 #endif /* LIBFDT_ENV_H */
 #endif
